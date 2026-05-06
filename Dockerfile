@@ -19,7 +19,7 @@ RUN dotnet restore
 COPY . .
 # Copiar el frontend build al wwwroot del backend
 COPY --from=frontend-build /frontend/dist ./wwwroot/
-RUN dotnet publish -c Release -o /app/publish
+RUN dotnet publish ImagenDiagnostico.csproj -c Release -o /app/publish
 
 # ==========================================
 # STAGE 3: Producción

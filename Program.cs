@@ -85,10 +85,7 @@ if (app.Environment.IsDevelopment())
 // Servir archivos estáticos del frontend (React build)
 if (hasFrontend)
 {
-    app.UseDefaultFiles(new Microsoft.AspNetCore.StaticFiles.DefaultFilesOptions
-    {
-        DefaultFileNames = new[] { "index.html" }
-    });
+    app.UseDefaultFiles();
     app.UseStaticFiles();
 }
 
