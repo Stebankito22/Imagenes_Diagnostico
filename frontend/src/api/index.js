@@ -1,26 +1,35 @@
 import axios from 'axios';
 
 // ======================== URLs DE BACKENDS ========================
-// Cada compañero expone su API en su propio servidor
+// En producción (mismo origen), usar paths relativos para nuestro backend
+const isProd = import.meta.env.PROD;
+
 const BACKENDS = {
-  imagenes: import.meta.env.VITE_API_IMAGENES || 'http://localhost:5211/api',
-  pacientes: import.meta.env.VITE_API_PACIENTES || 'http://localhost:5001/api',
-  consultas: import.meta.env.VITE_API_CONSULTAS || 'http://localhost:5002/api',
-  hospitalizacion: import.meta.env.VITE_API_HOSPITALIZACION || 'http://localhost:5003/api',
-  emergencias: import.meta.env.VITE_API_EMERGENCIAS || 'http://localhost:5004/api',
-  farmacia: import.meta.env.VITE_API_FARMACIA || 'http://localhost:5005/api',
-  inventarios: import.meta.env.VITE_API_INVENTARIOS || 'http://localhost:5006/api',
-  facturacion: import.meta.env.VITE_API_FACTURACION || 'http://localhost:5007/api',
-  atencion: import.meta.env.VITE_API_ATENCION || 'http://localhost:5008/api',
-  telemedicina: import.meta.env.VITE_API_TELEMEDICINA || 'http://localhost:5009/api',
-  rrhh: import.meta.env.VITE_API_RRHH || 'http://localhost:5010/api',
+  imagenes: isProd ? '/api' : (import.meta.env.VITE_API_IMAGENES || 'http://localhost:5211/api'),
+  pacientes: isProd ? '/api' : (import.meta.env.VITE_API_PACIENTES || 'http://localhost:5001/api'),
+  consultas: isProd ? '/api' : (import.meta.env.VITE_API_CONSULTAS || 'http://localhost:5002/api'),
+  hospitalizacion: isProd ? '/api' : (import.meta.env.VITE_API_HOSPITALIZACION || 'http://localhost:5003/api'),
+  emergencias: isProd ? '/api' : (import.meta.env.VITE_API_EMERGENCIAS || 'http://localhost:5004/api'),
+  farmacia: isProd ? '/api' : (import.meta.env.VITE_API_FARMACIA || 'http://localhost:5005/api'),
+  inventarios: isProd ? '/api' : (import.meta.env.VITE_API_INVENTARIOS || 'http://localhost:5006/api'),
+  facturacion: isProd ? '/api' : (import.meta.env.VITE_API_FACTURACION || 'http://localhost:5007/api'),
+  atencion: isProd ? '/api' : (import.meta.env.VITE_API_ATENCION || 'http://localhost:5008/api'),
+  telemedicina: isProd ? '/api' : (import.meta.env.VITE_API_TELEMEDICINA || 'http://localhost:5009/api'),
+  rrhh: isProd ? '/api' : (import.meta.env.VITE_API_RRHH || 'http://localhost:5010/api'),
 };
 
-const createApi = (baseURL) =>
-  axios.create({
+const createApi = (baseURL) => {
+  if (!baseURL) {
+    // Production: relative paths, same origin
+    return axios.create({
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  return axios.create({
     baseURL,
     headers: { 'Content-Type': 'application/json' },
   });
+};
 
 // ======================== NUESTRA API (Diagnóstico por Imágenes) ========================
 const api = createApi(BACKENDS.imagenes);

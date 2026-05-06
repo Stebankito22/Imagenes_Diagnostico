@@ -20,10 +20,22 @@ public class DemoSeedController : ControllerBase
     }
 
     [HttpPost("seed")]
-    public ActionResult SeedData()
+    public ActionResult SeedData([FromQuery] bool force = false)
     {
-        if (_context.TiposEstudio.Any())
-            return Ok(new { mensaje = "Los datos de demo ya existen." });
+        if (!force && _context.TiposEstudio.Any())
+            return Ok(new { mensaje = "Los datos de demo ya existen. Usa ?force=true para reiniciar." });
+
+        if (force && _context.TiposEstudio.Any())
+        {
+            // Limpiar datos existentes en orden inverso de dependencias
+            _context.InformesRadiologicos.RemoveRange(_context.InformesRadiologicos);
+            _context.EstudiosRealizados.RemoveRange(_context.EstudiosRealizados);
+            _context.OrdenesImagen.RemoveRange(_context.OrdenesImagen);
+            _context.TecnicosEjecutores.RemoveRange(_context.TecnicosEjecutores);
+            _context.Equipos.RemoveRange(_context.Equipos);
+            _context.TiposEstudio.RemoveRange(_context.TiposEstudio);
+            _context.SaveChanges();
+        }
 
         // ======================== TIPOS DE ESTUDIO ========================
         var tipos = new List<TipoEstudio>

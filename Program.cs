@@ -81,15 +81,12 @@ app.UseCors("AllowAll");
 
 var hasFrontend = Directory.Exists(Path.Combine(app.Environment.ContentRootPath, "wwwroot"));
 
-if (!app.Environment.IsProduction() || !hasFrontend)
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "API V1");
-        c.RoutePrefix = "swagger";
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "API V1");
+    c.RoutePrefix = "swagger";
+});
 
 if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
