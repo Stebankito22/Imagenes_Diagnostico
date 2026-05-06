@@ -117,7 +117,7 @@ function Catalogo() {
               <div className="modal-body">
                 <div className="form-group"><label>Código</label><input className="form-control" value={forms.equipo.codigo} onChange={e => setForms({...forms, equipo: {...forms.equipo, codigo: e.target.value}})} required /></div>
                 <div className="form-group"><label>Nombre</label><input className="form-control" value={forms.equipo.nombre} onChange={e => setForms({...forms, equipo: {...forms.equipo, nombre: e.target.value}})} required /></div>
-                <div className="form-group"><label>Modalidad</label><input className="form-control" value={forms.equipo.modalidad} onChange={e => setForms({...forms, equipo: {...forms.equipo, modalidad: e.target.value})} /></div>
+                <div className="form-group"><label>Modalidad</label><input className="form-control" value={forms.equipo.modalidad} onChange={e => setForms({...forms, equipo: {...forms.equipo, modalidad: e.target.value}})} /></div>
               </div>
               <div className="modal-footer"><button type="button" className="btn btn-outline" onClick={() => setModal(null)}>Cancelar</button><button type="submit" className="btn btn-primary">Crear</button></div>
             </form>
@@ -133,7 +133,7 @@ function Catalogo() {
               <div className="modal-body">
                 <div className="form-group"><label>Código</label><input className="form-control" value={forms.tecnico.codigo} onChange={e => setForms({...forms, tecnico: {...forms.tecnico, codigo: e.target.value}})} required /></div>
                 <div className="form-group"><label>Nombre</label><input className="form-control" value={forms.tecnico.nombre} onChange={e => setForms({...forms, tecnico: {...forms.tecnico, nombre: e.target.value}})} required /></div>
-                <div className="form-group"><label>Especialidad</label><input className="form-control" value={forms.tecnico.especialidad} onChange={e => setForms({...forms, tecnico: {...forms.tecnico, especialidad: e.target.value})} /></div>
+                <div className="form-group"><label>Especialidad</label><input className="form-control" value={forms.tecnico.especialidad} onChange={e => setForms({...forms, tecnico: {...forms.tecnico, especialidad: e.target.value}})} /></div>
               </div>
               <div className="modal-footer"><button type="button" className="btn btn-outline" onClick={() => setModal(null)}>Cancelar</button><button type="submit" className="btn btn-primary">Crear</button></div>
             </form>
