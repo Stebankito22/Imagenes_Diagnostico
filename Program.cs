@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using ImagenDiagnostico.Data;
-using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,13 +7,10 @@ var builder = WebApplication.CreateBuilder(args);
 var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? Environment.GetEnvironmentVariable("DATABASE_URL");
 
-if (!string.IsNullOrEmpty(connStr) && (connStr.StartsWith("postgres://") || connStr.StartsWith("postgresql://")))
+if (!string.IsNullOrEmpty(connStr) && connStr.StartsWith("postgres://"))
 {
-    // Reemplazar esquema y añadir parámetros SSL para Npgsql
-    var npgsqlUrl = connStr.Replace("postgres://", "postgresql://");
-    var csb = new NpgsqlConnectionStringBuilder(npgsqlUrl);
-    csb.SslMode = Npgsql.SslMode.Require;
-    connStr = csb.ConnectionString;
+    // Npgsql acepta postgresql:// como connection string directamente
+    connStr = connStr.Replace("postgres://", "postgresql://") + ";SSL Mode=Require;";
 }
 
 builder.Services.AddDbContext<AppDbContext>(options =>
