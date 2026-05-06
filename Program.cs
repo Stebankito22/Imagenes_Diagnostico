@@ -76,11 +76,14 @@ if (hasFrontend)
     app.UseStaticFiles();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsProduction())
+    app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
 if (hasFrontend)
     app.MapFallbackToFile("index.html");
 
-app.Run();
+// Bind to PORT env variable for Render
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+app.Run($"http://0.0.0.0:{port}");
