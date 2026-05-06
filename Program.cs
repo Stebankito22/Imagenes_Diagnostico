@@ -7,15 +7,21 @@ var builder = WebApplication.CreateBuilder(args);
 var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? Environment.GetEnvironmentVariable("DATABASE_URL");
 
+Console.WriteLine($"[DB] connStr is null or empty: {string.IsNullOrEmpty(connStr)}");
+Console.WriteLine($"[DB] connStr starts with: {connStr?.Substring(0, Math.Min(connStr.Length, 20))}");
+
 if (!string.IsNullOrEmpty(connStr) && connStr.StartsWith("postgres://"))
 {
     var uri = new Uri(connStr.Replace("postgres://", "http://"));
     var dbParts = uri.LocalPath.TrimStart('/').Split(new[] { '?' }, 2);
     var dbName = dbParts[0];
     var dbPort = uri.IsDefaultPort ? 5432 : uri.Port;
+    var userInfo = uri.UserInfo.Split(new[] { ':' }, 2);
+    var dbUser = Uri.UnescapeDataString(userInfo[0]);
+    var dbPass = Uri.UnescapeDataString(userInfo[1]);
     
-    var password = Uri.UnescapeDataString(uri.UserInfo.Split(new[] { ':' }, 2)[1]);
-    connStr = $"Host={uri.Host};Port={dbPort};Database={dbName};Username={Uri.UnescapeDataString(uri.UserInfo.Split(new[] { ':' }, 2)[0])};Password={password};SSL Mode=Require;";
+    connStr = $"Host={uri.Host};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass};SSL Mode=Require;";
+    Console.WriteLine($"[DB] Parsed from URI. Host={uri.Host}, Port={dbPort}, DB={dbName}");
 }
 
 builder.Services.AddDbContext<AppDbContext>(options =>
