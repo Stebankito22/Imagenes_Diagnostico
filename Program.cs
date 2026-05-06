@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ImagenDiagnostico.Data;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,18 +10,12 @@ var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
 
 if (!string.IsNullOrEmpty(connStr) && (connStr.StartsWith("postgres://") || connStr.StartsWith("postgresql://")))
 {
-    // Parsear postgresql://user:pass@host:port/dbname manualmente
-    var withoutScheme = connStr.Split("://")[1];
-    var atParts = withoutScheme.Split('@');
-    var userPass = atParts[0].Split(new[] { ':' }, 2);
-    var hostDb = atParts[1].Split(new[] { '/' }, 2);
-    var hostParts = hostDb[0].Split(':');
-    
-    var host = hostParts[0];
-    var dbPort = hostParts.Length > 1 ? hostParts[1] : "5432";
-    var db = hostDb.Length > 1 ? hostDb[1] : "";
-    
-    connStr = $"Host={host};Port={dbPort};Database={db};Username={userPass[0]};Password={userPass[1]};SSL Mode=Require;Trust Server Certificate=true;";
+    // Reemplazar esquema y añadir parámetros SSL para Npgsql
+    var npgsqlUrl = connStr.Replace("postgres://", "postgresql://");
+    var csb = new NpgsqlConnectionStringBuilder(npgsqlUrl);
+    csb.SslMode = Npgsql.SslMode.Require;
+    csb.TrustServerCertificate = true;
+    connStr = csb.ConnectionString;
 }
 
 builder.Services.AddDbContext<AppDbContext>(options =>
