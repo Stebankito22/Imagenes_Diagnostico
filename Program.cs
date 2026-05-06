@@ -14,7 +14,6 @@ if (!string.IsNullOrEmpty(connStr) && (connStr.StartsWith("postgres://") || conn
     var npgsqlUrl = connStr.Replace("postgres://", "postgresql://");
     var csb = new NpgsqlConnectionStringBuilder(npgsqlUrl);
     csb.SslMode = Npgsql.SslMode.Require;
-    csb.TrustServerCertificate = true;
     connStr = csb.ConnectionString;
 }
 
