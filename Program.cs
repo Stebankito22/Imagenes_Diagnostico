@@ -1,18 +1,24 @@
 using Microsoft.EntityFrameworkCore;
 using ImagenDiagnostico.Data;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Conexión a BD (soporta formato postgresql:// de Render)
-var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? Environment.GetEnvironmentVariable("DATABASE_URL");
+var configConnStr = builder.Configuration.GetConnectionString("DefaultConnection");
+var envConnStr = Environment.GetEnvironmentVariable("DATABASE_URL");
+var rawConnStr = string.IsNullOrWhiteSpace(configConnStr) ? envConnStr : configConnStr;
 
-Console.WriteLine($"[DB] connStr is null or empty: {string.IsNullOrEmpty(connStr)}");
-Console.WriteLine($"[DB] connStr starts with: {connStr?.Substring(0, Math.Min(connStr.Length, 20))}");
+if (string.IsNullOrWhiteSpace(rawConnStr))
+    throw new InvalidOperationException("No connection string found. Set DATABASE_URL or ConnectionStrings__DefaultConnection.");
 
-if (!string.IsNullOrEmpty(connStr) && connStr.StartsWith("postgres://"))
+var connStr = rawConnStr.Trim();
+Console.WriteLine($"[DB] connStr starts with: '{connStr.Substring(0, Math.Min(connStr.Length, 25))}'");
+
+if (connStr.StartsWith("postgres://") || connStr.StartsWith("postgresql://"))
 {
-    var uri = new Uri(connStr.Replace("postgres://", "http://"));
+    var scheme = connStr.StartsWith("postgresql://") ? "postgresql://" : "postgres://";
+    var uri = new Uri(connStr.Replace(scheme, "http://"));
     var dbParts = uri.LocalPath.TrimStart('/').Split(new[] { '?' }, 2);
     var dbName = dbParts[0];
     var dbPort = uri.IsDefaultPort ? 5432 : uri.Port;
@@ -20,7 +26,16 @@ if (!string.IsNullOrEmpty(connStr) && connStr.StartsWith("postgres://"))
     var dbUser = Uri.UnescapeDataString(userInfo[0]);
     var dbPass = Uri.UnescapeDataString(userInfo[1]);
     
-    connStr = $"Host={uri.Host};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass};SSL Mode=Require;";
+    var csb = new NpgsqlConnectionStringBuilder
+    {
+        Host = uri.Host,
+        Port = dbPort,
+        Database = dbName,
+        Username = dbUser,
+        Password = dbPass,
+        SslMode = SslMode.Require
+    };
+    connStr = csb.ConnectionString;
     Console.WriteLine($"[DB] Parsed from URI. Host={uri.Host}, Port={dbPort}, DB={dbName}");
 }
 
