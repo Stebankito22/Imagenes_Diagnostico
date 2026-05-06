@@ -3,29 +3,27 @@ using ImagenDiagnostico.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Database - Railway sets ConnectionStrings__DefaultConnection
+// 1. Conexión a BD (soporta formato postgresql:// de Render)
 var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? Environment.GetEnvironmentVariable("DATABASE_URL");
 
-if (!string.IsNullOrEmpty(connStr) && connStr.StartsWith("postgres://"))
+if (!string.IsNullOrEmpty(connStr) && (connStr.StartsWith("postgres://") || connStr.StartsWith("postgresql://")))
 {
-    // Railway usa postgres:// - convertir a Npgsql format
     var uri = new Uri(connStr);
-    var userInfo = uri.UserInfo.Split(':');
-    connStr = $"Host={uri.Host};Port={uri.Port};Database={uri.LocalPath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+    var userInfo = uri.UserInfo.Split(new[] { ':' }, 2);
+    var dbPath = uri.LocalPath.TrimStart('/');
+    connStr = $"Host={uri.Host};Port={uri.Port};Database={dbPath};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;";
 }
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connStr));
 
-// CORS
+// 2. CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
     });
 });
 
@@ -37,52 +35,41 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "API Diagnóstico por Imágenes",
         Version = "v1",
-        Description = @"Microservicio del Servicio de Diagnóstico por Imágenes del Hospital.
-
-## Endpoints por categoría
-- **Órdenes de Imagen** → Consultas Externas, Hospitalización, Emergencias
-- **Tipos de Estudio** → Catálogo de estudios disponibles
-- **Estudios Realizados** → Tu equipo de técnicos y radiólogos
-- **Equipos / Técnicos** → Gestión de recursos
-- **Informes Radiológicos** → Radiólogos, Atención al Paciente
-- **Integraciones** → Endpoints para TODOS los compañeros
-
-**Responsable:** Joel David Cerrogrande Ortega - Mayo 2026"
+        Description = "Microservicio del Servicio de Diagnóstico por Imágenes."
     });
-
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
-        c.IncludeXmlComments(xmlPath);
-
+    if (File.Exists(xmlPath)) c.IncludeXmlComments(xmlPath);
     c.OrderActionsBy(api => api.RelativePath);
 });
 
 var app = builder.Build();
 
-// CORS
+// 3. AUTO-MIGRACIÓN: Crea las tablas automáticamente al iniciar
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
+// 4. Middlewares
 app.UseCors("AllowAll");
 
-// Swagger (solo en desarrollo o si no hay frontend)
-var isProduction = app.Environment.IsProduction();
 var hasFrontend = Directory.Exists(Path.Combine(app.Environment.ContentRootPath, "wwwroot"));
 
-if (!isProduction || !hasFrontend)
+if (!app.Environment.IsProduction() || !hasFrontend)
 {
     app.UseSwagger();
-    app.UseSwaggerUI(options =>
+    app.UseSwaggerUI(c =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "API V1");
-        options.RoutePrefix = "swagger";
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "API V1");
+        c.RoutePrefix = "swagger";
     });
 }
 
 if (app.Environment.IsDevelopment())
-{
     app.UseDeveloperExceptionPage();
-}
 
-// Servir archivos estáticos del frontend (React build)
 if (hasFrontend)
 {
     app.UseDefaultFiles();
@@ -93,10 +80,7 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
-// Para SPA: cualquier ruta no-API redirige al index.html
 if (hasFrontend)
-{
     app.MapFallbackToFile("index.html");
-}
 
 app.Run();
