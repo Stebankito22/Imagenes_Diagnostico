@@ -9,10 +9,18 @@ var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
 
 if (!string.IsNullOrEmpty(connStr) && (connStr.StartsWith("postgres://") || connStr.StartsWith("postgresql://")))
 {
-    var uri = new Uri(connStr);
-    var userInfo = uri.UserInfo.Split(new[] { ':' }, 2);
-    var dbPath = uri.LocalPath.TrimStart('/');
-    connStr = $"Host={uri.Host};Port={uri.Port};Database={dbPath};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;";
+    // Parsear postgresql://user:pass@host:port/dbname manualmente
+    var withoutScheme = connStr.Split("://")[1];
+    var atParts = withoutScheme.Split('@');
+    var userPass = atParts[0].Split(new[] { ':' }, 2);
+    var hostDb = atParts[1].Split(new[] { '/' }, 2);
+    var hostParts = hostDb[0].Split(':');
+    
+    var host = hostParts[0];
+    var dbPort = hostParts.Length > 1 ? hostParts[1] : "5432";
+    var db = hostDb.Length > 1 ? hostDb[1] : "";
+    
+    connStr = $"Host={host};Port={dbPort};Database={db};Username={userPass[0]};Password={userPass[1]};SSL Mode=Require;Trust Server Certificate=true;";
 }
 
 builder.Services.AddDbContext<AppDbContext>(options =>
