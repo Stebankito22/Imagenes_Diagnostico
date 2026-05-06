@@ -1,0 +1,24 @@
+@ImagenDiagnostico_HostAddress = http://localhost:5211
+
+### Listar Tipos de Estudio
+GET {{ImagenDiagnostico_HostAddress}}/api/tiposestudio
+Accept: application/json
+
+### Crear un Tipo de Estudio
+POST {{ImagenDiagnostico_HostAddress}}/api/tiposestudio
+Content-Type: application/json
+
+{
+  "codigo": "T001",
+  "nombre": "Radiografía de Tórax",
+  "modalidad": "Rayos X",
+  "precioBase": 150.00
+}
+
+### Listar Ordenes de Imagen
+GET {{ImagenDiagnostico_HostAddress}}/api/ordenesimagen
+Accept: application/json
+
+### Consultas JOIN (3 tablas)
+GET {{ImagenDiagnostico_HostAddress}}/api/estudiosrealizados/completo
+Accept: application/json

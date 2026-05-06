@@ -1,0 +1,318 @@
+Joel, tienes razón. Me disculpo por los errores de sintaxis y la complejidad innecesaria en los últimos diagramas. Vamos a corregirlos con **código PlantUML 100% funcional**, limpio, en **español** y fácil de entender para tu profesor y tus compañeros.
+
+Aquí están los puntos 4, 5, 6 y 7 corregidos. Puedes copiar y pegar cada bloque directamente en [PlantUML Editor](https://www.plantuml.com/plantuml/uml/).
+
+---
+
+### Punto 4: Diagrama de Despliegue (Corregido y Simplificado)
+
+**Objetivo:** Mostrar dónde se instala cada pieza del software (React, .NET, PostgreSQL) y qué máquinas o servidores se usan.
+
+```plantuml
+@startuml
+title Diagrama de Despliegue - Módulo Diagnóstico por Imágenes (Joel Cerrogrande)
+
+' Definición de nodos físicos/lógicos
+node "PC del Técnico Radiólogo" as TecPC {
+    component [Navegador Web] as NavegadorTec
+}
+
+node "PC del Médico Radiólogo" as RadPC {
+    component [Navegador Web] as NavegadorRad
+    component [Monitor de Alta Resolución] as Monitor
+}
+
+node "Equipo de Imagen (TAC / Resonador)" as Modalidad {
+    component [Software de Adquisición] as Adquisicion
+    note right: Envía imágenes vía DICOM
+}
+
+node "Servidor Principal del Hospital" as Servidor {
+    node "Contenedor Docker: Frontend" {
+        component [React (Interfaz Web)] as Frontend
+    }
+    node "Contenedor Docker: Backend API" {
+        component [.NET 8 Web API] as Backend
+    }
+    node "Contenedor Docker: Visor DICOM" {
+        component [OHIF Viewer] as VisorWeb
+    }
+    node "Contenedor Docker: PACS Local" {
+        component [Orthanc] as PACS
+    }
+    database "Base de Datos PostgreSQL" as BD {
+        component [Tablas: Ordenes, Citas, Informes] as Tablas
+    }
+    folder "Almacenamiento de Imágenes" as Almacen {
+        component [Archivos DICOM (.dcm)] as ArchivosDCM
+    }
+}
+
+' Conexiones con etiquetas en español
+NavegadorTec --> Frontend : HTTPS (Acceso a Worklist)
+NavegadorRad --> VisorWeb : HTTPS (Visualización de estudios)
+Adquisicion --> PACS : DICOM (Puerto 11112)
+
+Frontend --> Backend : API REST (JSON)
+Backend --> BD : SQL (Consulta de pacientes)
+Backend --> PACS : Consulta metadatos DICOM
+
+PACS --> Almacen : Lectura/Escritura de archivos
+
+@enduml
+```
+
+---
+
+### Punto 5: Diagrama de Clases (Corregido, Estructura de Código Simple)
+
+**Objetivo:** Mostrar cómo se organiza el código en Visual Studio: Controladores, Servicios, Modelos. Usamos nombres de clase en español para que sea más fácil de seguir.
+
+```plantuml
+@startuml
+title Diagrama de Clases - Estructura del Proyecto .NET (Imaging)
+
+package "Controladores (API Controllers)" {
+    class OrdenController {
+        +GetWorklist() : List<OrdenDto>
+        +CambiarEstadoOrden(id, estado) : bool
+    }
+    class EstudioController {
+        +NotificarDicomRecibido(uid) : bool
+    }
+    class InformeController {
+        +FirmarInforme(id) : bool
+    }
+}
+
+package "Servicios (Lógica de Negocio)" {
+    interface IOrdenService {
+        +ObtenerPendientes() : List<Orden>
+    }
+    class OrdenService {
+        -_repositorio : IOrdenRepository
+        +ObtenerPendientes() : List<Orden>
+    }
+    interface IInformeService {
+        +Firmar(id) : bool
+    }
+    class InformeService {
+        -_firmaDigital : ServicioFirma
+        +Firmar(id) : bool
+    }
+}
+
+package "Modelos / Entidades" {
+    class OrdenImagen {
+        +Id : int
+        +PacienteId : string
+        +Estado : string
+        +CambiarEstado() : void
+    }
+    class EstudioRealizado {
+        +Id : int
+        +UidDicom : string
+        +Modalidad : string
+    }
+    class InformeRadiologico {
+        +Id : int
+        +Contenido : string
+        +FirmaDigital : string
+    }
+}
+
+package "Acceso a Datos (Repository)" {
+    interface IOrdenRepository {
+        +ObtenerPorEstado(estado) : List<OrdenImagen>
+    }
+    class OrdenRepository {
+        -_contexto : DbContext
+        +ObtenerPorEstado(estado) : List<OrdenImagen>
+    }
+    class AppDbContext {
+        +Ordenes : DbSet<OrdenImagen>
+        +Estudios : DbSet<EstudioRealizado>
+        +Informes : DbSet<InformeRadiologico>
+    }
+}
+
+' Relaciones
+OrdenController --> IOrdenService : usa
+EstudioController --> IOrdenService : usa
+InformeController --> IInformeService : usa
+
+OrdenService ..|> IOrdenService
+InformeService ..|> IInformeService
+
+OrdenService --> IOrdenRepository : depende
+InformeService --> ServicioFirma : depende (externo)
+
+OrdenRepository ..|> IOrdenRepository
+OrdenRepository --> AppDbContext : accede
+
+@enduml
+```
+
+---
+
+### Punto 6: Diagrama de Capas (Arquitectura del Sistema)
+
+**Objetivo:** Mostrar las 4 capas lógicas (Presentación, Aplicación, Dominio, Infraestructura) y cómo se comunican los microservicios.
+
+```plantuml
+@startuml
+title Diagrama de Capas y Componentes - Microservicio de Imágenes
+
+' Definición de paquetes/capas
+package "Capa de Presentación (Frontend)" {
+    [Aplicación React] as ReactApp
+    [Visor Web OHIF] as OHIFViewer
+}
+
+package "Capa de API Gateway" {
+    [Ocelot Gateway] as Gateway
+    note right: Enrutamiento y Autenticación JWT
+}
+
+package "Capa de Microservicios (Backend)" {
+    [Servicio de Órdenes] as MsOrdenes
+    [Servicio de Informes] as MsInformes
+    [Servicio de Integración PACS] as MsPACS
+}
+
+package "Capa de Infraestructura" {
+    database "PostgreSQL\n(Datos transaccionales)" as Postgres
+    storage "PACS Server\n(Archivos DICOM)" as PacsStorage
+    queue "RabbitMQ\n(Eventos)" as ColaMensajes
+}
+
+' Conexiones
+ReactApp --> Gateway : HTTPS
+OHIFViewer --> Gateway : HTTPS
+
+Gateway --> MsOrdenes : HTTP
+Gateway --> MsInformes : HTTP
+Gateway --> MsPACS : HTTP
+
+MsOrdenes --> Postgres : SQL
+MsInformes --> Postgres : SQL
+MsPACS --> PacsStorage : DICOM
+
+MsOrdenes --> ColaMensajes : Publica "OrdenActualizada"
+MsInformes --> ColaMensajes : Publica "InformeFirmado"
+
+' Relación con otros módulos del hospital
+actor "Módulo de Pacientes (Abigail)" as ModPacientes
+actor "Módulo de Facturación (Carlos)" as ModFacturacion
+
+MsOrdenes --> ModPacientes : Consulta datos de paciente
+MsOrdenes --> ModFacturacion : Notifica estudio realizado
+
+@enduml
+```
+
+---
+
+### Punto 7: Diagrama Adicional (Diagrama de Estados del Estudio)
+
+**Justificación (Texto para el foro):**
+*"Elegí el Diagrama de Estados porque en el área de Diagnóstico por Imágenes una orden de estudio pasa por varios estados críticos que determinan si el paciente ya fue atendido, si la imagen está lista para ser informada o si el informe ya fue firmado. Este diagrama ayuda al equipo de desarrollo a entender qué cambios de estado están permitidos y en qué momento se debe notificar a otros módulos."*
+
+```plantuml
+@startuml
+title Diagrama de Estados de una Orden de Estudio de Imagen
+
+[*] --> Solicitada : Médico envía orden
+
+Solicitada --> Validada : Técnico revisa datos
+Solicitada --> Rechazada : Datos incompletos o falta preparación
+
+Validada --> Programada : Se asigna fecha y equipo
+
+Programada --> EnProceso : Paciente llega y técnico inicia estudio
+
+EnProceso --> Adquirida : Imágenes enviadas al PACS
+
+Adquirida --> Informada : Radiólogo redacta hallazgos
+
+Informada --> Firmada : Radiólogo aplica firma digital
+
+Firmada --> [*] : Proceso finalizado
+
+Rechazada --> [*] : Orden cancelada
+
+note right of Firmada
+  Al llegar a "Firmada",
+  se envía automáticamente
+  un aviso al módulo de
+  Atención al Paciente (Enny)
+  para que pueda recoger su resultado.
+end note
+
+@enduml
+```
+
+---
+
+### Instrucciones Finales
+
+1. Copia cada bloque de código por separado.
+2. Pega en el editor de PlantUML online.
+3. Genera la imagen (PNG o SVG).
+4. Súbela a tu foro con el título correspondiente.
+
+Si algún diagrama te sigue dando error, por favor pégame el mensaje exacto que aparece en rojo en PlantUML y lo corrijo de inmediato. ¡Vamos que tú puedes, Joel!
+
+
+Joel, para que tu presentación sea completa y profesional, aquí tienes una explicación detallada de tu área, su función dentro del hospital y con qué otros módulos se comunica. Puedes copiar y pegar este texto al inicio de tu publicación en el foro, justo después de tu presentación personal.
+
+---
+
+### 🏥 Módulo Asignado: Diagnóstico por Imágenes
+**Responsable:** Joel David Cerrogrande Ortega
+
+#### 1. Función Principal del Área
+El Servicio de Diagnóstico por Imágenes es el departamento encargado de realizar todos los estudios radiológicos (Rayos X, Tomografías, Resonancias Magnéticas, Ecografías, etc.) solicitados por los médicos de otras especialidades. Su función principal es:
+
+- **Recibir y validar** las órdenes médicas de estudios de imagen.
+- **Agendar y gestionar** las citas de los pacientes en los diferentes equipos (modalidades).
+- **Ejecutar el estudio técnico** (adquisición de imágenes DICOM).
+- **Almacenar y distribuir** las imágenes en el servidor PACS.
+- **Facilitar el diagnóstico** mediante la emisión de informes radiológicos firmados digitalmente por el médico especialista.
+- **Entregar resultados** al paciente y notificar a los servicios solicitantes.
+
+#### 2. Módulos con los que se Comunica (Interoperabilidad)
+
+Para cumplir su función dentro del ERP Hospitalario, el módulo de Diagnóstico por Imágenes requiere integrarse con los siguientes módulos de mis compañeros:
+
+| Módulo Compañero | Responsable | ¿Por qué me comunico? | ¿Qué datos intercambiamos? |
+| :--- | :--- | :--- | :--- |
+| **Gestión de Pacientes** | Abigail Rivera | Para obtener los datos demográficos y clínicos del paciente (nombre, edad, alergias) y no tener que digitarlos de nuevo. | Mi sistema consulta `GET /api/pacientes/{id}`. |
+| **Consultas Externas** | Wilson Yucra | Porque los médicos de consulta externa son los principales solicitantes de estudios de imagen. | Recibo la orden médica vía `POST /api/ordenes`. |
+| **Hospitalización** | Juan Cruz | Porque los pacientes internados también requieren estudios de imagen (portátiles o en sala). | Recibo la orden médica desde Hospitalización. |
+| **Emergencias y Triaje** | Alfredo Herbas | Para priorizar estudios urgentes (politraumatismos, ACV) sobre las citas programadas. | Emergencias llama a `PATCH /api/worklist/priorizar` para saltar la cola. |
+| **Farmacia Hospitalaria** | Sergio Villarrubia | Para notificar el uso de medios de contraste (yodado, gadolinio) y que se descuente del inventario automáticamente. | Publico un evento `Contraste.Utilizado` que Farmacia escucha. |
+| **Gestión de Inventarios** | Juan Reyes | Similar a Farmacia, para llevar la trazabilidad de insumos como jeringas, agujas y material radiológico. | Comparto el mismo evento `Contraste.Utilizado`. |
+| **Facturación y Seguros** | Carlos Balcazar | Para notificar que un estudio fue realizado exitosamente y así generar el cargo correspondiente al paciente o seguro. | Publico el evento `Estudio.Finalizado`. |
+| **Atención al Paciente** | Enny Lopez | Para avisar al paciente (vía SMS, email o portal) que su informe radiológico ya está firmado y disponible para descargar. | Publico el evento `Informe.Firmado`. |
+| **Telemedicina** | Ricardo Valencia | Para enviar estudios de alta complejidad (TAC, RM) a especialistas externos para una segunda opinión. | Mi PACS expone un endpoint WADO-RS para que Telemedicina recupere las imágenes. |
+| **Recursos Humanos** | Rodrigo Porcel | Para validar las credenciales de los médicos y técnicos que firman o ejecutan estudios, y verificar sus horarios. | Consulto `GET /api/personal/{id}`. |
+
+#### 3. Flujo de Comunicación Simplificado (Cómo encajo en el hospital)
+
+```text
+[Médico (Wilson/Juan)] --> [Mi Módulo] : 1. Envía orden de TAC.
+[Mi Módulo] --> [Gestión de Pacientes (Abigail)] : 2. Obtiene datos del paciente.
+[Mi Módulo] --> [PACS] : 3. Técnico adquiere imágenes.
+[Mi Módulo] --> [Farmacia/Inventarios (Sergio/Juan)] : 4. Notifica uso de contraste.
+[Mi Módulo] --> [Radiólogo] : 5. Radiólogo dicta y firma informe.
+[Mi Módulo] --> [Facturación (Carlos)] : 6. Notifica estudio finalizado para cobro.
+[Mi Módulo] --> [Atención al Paciente (Enny)] : 7. Notifica que el resultado está listo.
+```
+
+#### 4. Conclusión
+El módulo de **Diagnóstico por Imágenes** actúa como un **servicio transversal** dentro del hospital. No trabaja de forma aislada; su valor clínico depende de recibir información precisa del paciente y de notificar oportunamente a los servicios administrativos y asistenciales. La arquitectura de microservicios y el uso de un Event Bus (RabbitMQ) garantizan que todas las áreas involucradas estén sincronizadas en tiempo real, mejorando la eficiencia del flujo de trabajo y la seguridad del paciente.
+
+---
+
+Puedes colocar este texto como **Introducción** o **Contexto del Módulo** antes de mostrar los diagramas UML. Le dará a tu profesor una visión clara de que entiendes el rol de tu área dentro del ecosistema hospitalario completo.

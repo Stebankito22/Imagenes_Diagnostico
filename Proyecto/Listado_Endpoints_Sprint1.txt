@@ -1,0 +1,152 @@
+LISTADO DE ENDPOINTS - MICROSERVICIO IMAGEN DIAGNOSTICO
+=====================================================
+Proyecto: ERP Hospitalario
+Microservicio: Imagen Diagnostico (Departamento de Imagenologia)
+Sprint: 1
+Fecha: 2026-05-03
+
+=====================================================
+1. ENTIDAD: EQUIPOS
+=====================================================
+Base URL: /api/equipos
+
++--------+-------------------------+-------------+----------------------------+
+| METODO | URL                     | DESCRIPCION | TABLA/ENTIDAD              |
++--------+-------------------------+-------------+----------------------------+
+| GET    | /api/equipos            | Listar todos| Equipos                    |
+| GET    | /api/equipos/{codigo}   | Obtener por | Equipos                    |
+|        |                         | codigo      |                            |
+| POST   | /api/equipos            | Crear       | Equipos                    |
++--------+-------------------------+-------------+----------------------------+
+
+=====================================================
+2. ENTIDAD: TIPOS DE ESTUDIO
+=====================================================
+Base URL: /api/tiposestudio
+
++--------+-------------------------+-------------+----------------------------+
+| METODO | URL                     | DESCRIPCION | TABLA/ENTIDAD              |
++--------+-------------------------+-------------+----------------------------+
+| GET    | /api/tiposestudio       | Listar todos| TiposEstudio               |
+| GET    | /api/tiposestudio/{codigo}| Obtener por| TiposEstudio               |
+|        |                         | codigo      |                            |
+| POST   | /api/tiposestudio       | Crear       | TiposEstudio               |
+| PUT    | /api/tiposestudio/{codigo}| Actualizar | TiposEstudio               |
+| DELETE | /api/tiposestudio/{codigo}| Eliminar   | TiposEstudio (soft delete) |
++--------+-------------------------+-------------+----------------------------+
+
+=====================================================
+3. ENTIDAD: TECNICOS EJECUTORES
+=====================================================
+Base URL: /api/tecnicos
+
++--------+-------------------------+-------------+----------------------------+
+| METODO | URL                     | DESCRIPCION | TABLA/ENTIDAD              |
++--------+-------------------------+-------------+----------------------------+
+| GET    | /api/tecnicos           | Listar todos| TecnicosEjecutores         |
+| GET    | /api/tecnicos/{codigo}  | Obtener por | TecnicosEjecutores         |
+|        |                         | codigo      |                            |
+| POST   | /api/tecnicos           | Crear       | TecnicosEjecutores         |
++--------+-------------------------+-------------+----------------------------+
+
+=====================================================
+4. ENTIDAD: ORDENES DE IMAGEN
+=====================================================
+Base URL: /api/ordenesimagen
+
++--------+-------------------------+-------------+----------------------------+
+| METODO | URL                     | DESCRIPCION | TABLA/ENTIDAD              |
++--------+-------------------------+-------------+----------------------------+
+| GET    | /api/ordenesimagen      | Listar todos| OrdenesImagen              |
+| GET    | /api/ordenesimagen/{codigo}| Obtener por| OrdenesImagen              |
+|        |                         | codigo      |                            |
+| POST   | /api/ordenesimagen      | Crear       | OrdenesImagen              |
+| PUT    | /api/ordenesimagen/{codigo}| Actualizar | OrdenesImagen              |
+| DELETE | /api/ordenesimagen/{codigo}| Eliminar   | OrdenesImagen (soft delete)|
+| GET    | /api/ordenesimagen/sin-estudio | Ordenes  | OrdenesImagen              |
+|        |                         | sin estudio |                            |
++--------+-------------------------+-------------+----------------------------+
+
+=====================================================
+5. ENTIDAD: ESTUDIOS REALIZADOS
+=====================================================
+Base URL: /api/estudiosrealizados
+
++--------+--------------------------------+-------------+----------------------------+
+| METODO | URL                            | DESCRIPCION | TABLA/ENTIDAD              |
++--------+--------------------------------+-------------+----------------------------+
+| GET    | /api/estudiosrealizados        | Listar todos| EstudiosRealizados         |
+| GET    | /api/estudiosrealizados/{codigo}| Obtener por| EstudiosRealizados         |
+|        |                                | codigo      |                            |
+| POST   | /api/estudiosrealizados        | Crear       | EstudiosRealizados         |
+| PUT    | /api/estudiosrealizados/{codigo}| Actualizar | EstudiosRealizados         |
+| DELETE | /api/estudiosrealizados/{codigo}| Eliminar   | EstudiosRealizados         |
+|        |                                |             | (soft delete)              |
+| GET    | /api/estudiosrealizados/resumen| Resumen 2   | EstudiosRealizados,        |
+|        |                                | tablas      | TiposEstudio               |
+| GET    | /api/estudiosrealizados/contar-por-modalidad| Contar | EstudiosRealizados,    |
+|        |                                | por modalidad| TiposEstudio              |
+| GET    | /api/estudiosrealizados/suma-precios-por-modalidad| Suma | EstudiosRealizados,    |
+|        |                                | precios     | TiposEstudio               |
+| GET    | /api/estudiosrealizados/buscar/{codigoOrden}| Buscar| EstudiosRealizados,    |
+|        |                                | por orden   | OrdenesImagen              |
+| GET    | /api/estudiosrealizados/produccion-mensual?anio=&mes=| Prod. | EstudiosRealizados,    |
+|        |                                | mensual     | TiposEstudio               |
+| GET    | /api/estudiosrealizados/pendientes-informe| Pendientes| EstudiosRealizados,    |
+|        |                                | informe     | TiposEstudio               |
+| GET    | /api/estudiosrealizados/hoy-por-tecnico/{codigoTecnico}| Hoy | EstudiosRealizados,    |
+|        |                                | por tecnico | TecnicosEjecutores         |
+| GET    | /api/estudiosrealizados/tiempo-promedio| Tiempo    | EstudiosRealizados,    |
+|        |                                | promedio    | TiposEstudio               |
+| GET    | /api/estudiosrealizados/por-urgencia| Por       | EstudiosRealizados,    |
+|        |                                | urgencia    | OrdenesImagen              |
+| GET    | /api/estudiosrealizados/contraste-pendiente| Contraste| EstudiosRealizados,    |
+|        |                                | pendiente   | TiposEstudio, OrdenesImagen|
+| GET    | /api/estudiosrealizados/equipos-top?fechaInicio=&fechaFin=| Equipos| EstudiosRealizados,    |
+|        |                                | top         | Equipos                    |
+| GET    | /api/estudiosrealizados/dosis-acumulada| Dosis     | EstudiosRealizados,    |
+|        |                                | acumulada   | OrdenesImagen              |
+| GET    | /api/estudiosrealizados/ranking-tipos| Ranking   | EstudiosRealizados,    |
+|        |                                | tipos       | TiposEstudio               |
++--------+--------------------------------+-------------+----------------------------+
+
+=====================================================
+RESUMEN TOTAL DE ENDPOINTS: 33
+=====================================================
+
+Equipos: 3 endpoints
+TiposEstudio: 5 endpoints
+TecnicosEjecutores: 3 endpoints
+OrdenesImagen: 6 endpoints (incluye /sin-estudio)
+EstudiosRealizados: 16 endpoints
+
+=====================================================
+INTERACCIONES CON OTROS MICROSERVICIOS
+=====================================================
+
+Este microservicio de Imagen Diagnostico se integra con:
+
+1. Microservicio de Pacientes
+   - Recibe: PacienteId (en OrdenesImagen y EstudiosRealizados)
+   - Consulta datos del paciente mediante PacienteId
+
+2. Microservicio de Medicos
+   - Recibe: MedicoSolicitanteId (en OrdenesImagen)
+   - Consulta datos del medico solicitante
+
+3. Microservicio de Contabilidad (su microservicio)
+   - Envía: Datos de estudios realizados para facturación
+   - Recibe: Confirmación de pagos y estados de cuenta
+
+=====================================================
+NORMALIZACION: 5FN
+=====================================================
+
+Las tablas estan normalizadas hasta 5FN:
+- Equipos: Codigo (PK), Nombre, Modalidad
+- TiposEstudio: Id (PK), Codigo, Nombre, Modalidad, PrecioBase, RequiereContraste
+- TecnicosEjecutores: Id (PK), Codigo, Nombre, Especialidad
+- OrdenesImagen: Id (PK), Codigo, PacienteId, MedicoSolicitanteId, FechaSolicitud, Urgencia
+- EstudiosRealizados: Id (PK), Codigo, OrdenImagenId (FK), TipoEstudioId (FK), 
+                       TecnicoEjecutorId (FK), EquipoId (FK), FechaHoraInicio, 
+                       FechaHoraFin, DosisRadiacion, ContrasteAplicado, EstadoInforme

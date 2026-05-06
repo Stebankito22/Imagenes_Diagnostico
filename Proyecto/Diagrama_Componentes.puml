@@ -1,0 +1,143 @@
+@startuml
+title Diagrama de Componentes - Microservicio Imagen Diagnostico
+Sprint 1 - ERP Hospitalario
+
+' Definicion de estilos
+skinparam componentStyle rectangle
+skinparam component {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontStyle bold
+}
+
+skinparam interface {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+}
+
+skinparam arrow {
+  Color #424242
+  FontColor #424242
+}
+
+' Microservicios de companeros (otros departamentos)
+package "ERP Hospitalario - Microservicios" {
+  
+  ' Microservicio de Pacientes (companero)
+  component "Microservicio\nPacientes" as Pacientes {
+    interface "API Pacientes" as IPacientes
+  }
+  
+  ' Microservicio de Medicos (companero)
+  component "Microservicio\nMedicos" as Medicos {
+    interface "API Medicos" as IMedicos
+  }
+  
+  ' Microservicio de Contabilidad (su microservicio - el estudiante)
+  component "Microservicio\nContabilidad" as Contabilidad {
+    interface "API Contabilidad" as IContabilidad
+  }
+  
+  ' Microservicio de Farmacia (companero - referencia)
+  component "Microservicio\nFarmacia" as Farmacia {
+    interface "API Farmacia" as IFarmacia
+  }
+  
+  ' ============================================
+  ' SU MICROSERVICIO: IMAGEN DIAGNOSTICO
+  ' ============================================
+  component "Microservicio\nImagen Diagnostico" as ImagenDiag #E8F5E9 {
+    
+    ' Capa de Controladores (API)
+    package "Controllers (API REST)" {
+      component "EquiposController" as EquiposCtrl
+      component "TiposEstudioController" as TiposCtrl
+      component "TecnicosController" as TecnicosCtrl
+      component "OrdenesImagenController" as OrdenesCtrl
+      component "EstudiosRealizadosController" as EstudiosCtrl
+    }
+    
+    ' Capa de Logica/DTOs
+    package "DTOs" {
+      component "EquipoDto" as EquipoDto
+      component "TipoEstudioDto" as TipoDto
+      component "TecnicoDto" as TecnicoDto
+      component "OrdenImagenDto" as OrdenDto
+      component "EstudioRealizadoDto" as EstudioDto
+    }
+    
+    ' Capa de Modelos
+    package "Models" {
+      component "Equipo" as EquipoM
+      component "TipoEstudio" as TipoM
+      component "TecnicoEjecutor" as TecnicoM
+      component "OrdenImagen" as OrdenM
+      component "EstudioRealizado" as EstudioM
+    }
+    
+    ' Capa de Datos
+    package "Data Access" {
+      component "AppDbContext" as DbContext
+      component "Migrations" as Migrations
+    }
+    
+    ' Base de Datos
+    database "PostgreSQL\n(Base de Datos\nNormalizada 5FN)" as DB
+  }
+}
+
+' ============================================
+' INTERACCIONES ENTRE MICROSERVICIOS
+' ============================================
+
+' Imagen Diagnostico --> Pacientes (consulta datos de pacientes)
+ImagenDiag --> IPacientes : "Consulta PacienteId\npara Ordenes y Estudios"
+Pacientes --> ImagenDiag : "Datos del paciente"
+
+' Imagen Diagnostico --> Medicos (consulta datos de medicos)
+ImagenDiag --> IMedicos : "Consulta MedicoSolicitanteId\npara Ordenes"
+Medicos --> ImagenDiag : "Datos del medico"
+
+' Imagen Diagnostico --> Contabilidad (envia datos para facturacion)
+EstudiosCtrl --> IContabilidad : "Envía estudios realizados\npara facturación"
+IContabilidad --> ImagenDiag : "Confirmación de pagos\ny estados de cuenta"
+
+' Imagen Diagnostico --> Farmacia (consulta disponibilidad de contraste)
+ImagenDiag --> IFarmacia : "Consulta disponibilidad\nde contraste"
+Farmacia --> ImagenDiag : "Stock de contraste"
+
+' ============================================
+' DEPENDENCIAS INTERNAS DEL MICROSERVICIO
+' ============================================
+
+' Controladores dependen de DTOs
+EquiposCtrl --> EquipoDto
+TiposCtrl --> TipoDto
+TecnicosCtrl --> TecnicoDto
+OrdenesCtrl --> OrdenDto
+EstudiosCtrl --> EstudioDto
+
+' Controladores dependen del DbContext
+EquiposCtrl --> DbContext
+TiposCtrl --> DbContext
+TecnicosCtrl --> DbContext
+OrdenesCtrl --> DbContext
+EstudiosCtrl --> DbContext
+
+' DbContext usa los Modelos
+DbContext --> EquipoM
+DbContext --> TipoM
+DbContext --> TecnicoM
+DbContext --> OrdenM
+DbContext --> EstudioM
+
+' DbContext se conecta a la BD
+DbContext --> DB : "Entity Framework Core"
+
+' EstudiosRealizados tiene FKs a otras tablas
+EstudioM --> OrdenM : "OrdenImagenId (FK)"
+EstudioM --> TipoM : "TipoEstudioId (FK)"
+EstudioM --> TecnicoM : "TecnicoEjecutorId (FK)"
+EstudioM --> EquipoM : "EquipoId (FK)"
+
+@enduml

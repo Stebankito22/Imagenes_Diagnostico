@@ -1,0 +1,32 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Jefe de Servicio" as Jefe
+actor "Médico Radiólogo" as Radiologo
+actor "Técnico Radiólogo" as Tecnico
+
+rectangle "Consultas MIS - Diagnóstico por Imágenes" {
+  usecase "Consultar producción mensual por modalidad" as UC1
+  usecase "Consultar estudios pendientes de informe" as UC2
+  usecase "Consultar estudios realizados hoy por técnico" as UC3
+  usecase "Consultar tiempo promedio por tipo de estudio" as UC4
+  usecase "Consultar cantidad de estudios por urgencia" as UC5
+  usecase "Consultar estudios con contraste pendiente de registro" as UC6
+  usecase "Consultar órdenes sin estudio realizado" as UC7
+  usecase "Consultar equipos con mayor cantidad de estudios en rango" as UC8
+  usecase "Consultar dosis acumulada por paciente" as UC9
+  usecase "Consultar ranking de tipos de estudio más solicitados" as UC10
+}
+
+Jefe --> UC1
+Jefe --> UC4
+Jefe --> UC8
+Jefe --> UC10
+Radiologo --> UC2
+Radiologo --> UC5
+Radiologo --> UC6
+Tecnico --> UC3
+Tecnico --> UC7
+Tecnico --> UC9
+@enduml

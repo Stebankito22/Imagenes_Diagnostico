@@ -1,0 +1,34 @@
+@startuml
+title Diagrama de Componentes - Imagen Diagnostico
+
+package "Microservicios Compañeros" {
+  [Pacientes API] as Pacientes
+  [Medicos API] as Medicos
+  [Contabilidad API] as Contabilidad
+  [Farmacia API] as Farmacia
+}
+
+package "Imagen Diagnostico" {
+  [Equipos Controller] as EC
+  [TiposEstudio Controller] as TC
+  [Tecnicos Controller] as TecC
+  [Ordenes Controller] as OC
+  [Estudios Controller] as ES
+  
+  [AppDbContext] as DB
+  database "PostgreSQL\n5FN" as BD
+  
+  EC --> DB
+  TC --> DB
+  TecC --> DB
+  OC --> DB
+  ES --> DB
+  DB --> BD
+}
+
+ES --> Pacientes : PacienteId
+ES --> Medicos : MedicoId
+ES --> Contabilidad : Facturacion
+ES --> Farmacia : Contraste
+
+@enduml

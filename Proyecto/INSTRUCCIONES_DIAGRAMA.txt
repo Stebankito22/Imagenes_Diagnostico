@@ -1,0 +1,18 @@
+DIAGRAMA DE COMPONENTES - INSTRUCCIONES
+
+Para generar la imagen PNG del diagrama de componentes:
+
+Opcion 1 - PlantUML Online:
+1. Ir a: http://www.plantuml.com/plantuml
+2. Copiar el contenido de Diagrama_Componentes.puml
+3. Renderizar y descargar como PNG
+
+Opcion 2 - PlantUML Local (si tienes Java):
+java -jar plantuml.jar Diagrama_Componentes.puml
+
+Opcion 3 - Usar herramienta online:
+Subir el archivo .puml a: https://planttext.com/
+
+Archivos creados:
+- Diagrama_Componentes.puml (diagrama completo)
+- Diagrama_Componentes_Simple.puml (version simplificada)

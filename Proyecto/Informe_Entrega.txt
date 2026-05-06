@@ -1,0 +1,269 @@
+INFORME DE ENTREGA - MÓDULO DIAGNÓSTICO POR IMÁGENES
+====================================================
+Estudiante: Joel David Cerrogrande Ortega
+Módulo: Diagnóstico por Imágenes
+Fecha: Mayo 2026
+
+================================================================================
+1. DIAGRAMA DE CASOS DE USO (20 pts)
+================================================================================
+
+Descripción:
+Se elaboró un diagrama de casos de uso para el departamento de Diagnóstico por
+Imágenes, orientado exclusivamente a consultas (queries) de información para
+toma de decisiones (MIS).
+
+Actores definidos:
+  - Jefe de Servicio: Toma decisiones estratégicas sobre producción, equipos y
+    tipos de estudio más demandados.
+  - Médico Radiólogo: Consulta estudios pendientes, carga de trabajo por urgencia
+    y registros de contraste pendientes.
+  - Técnico Radiólogo: Consulta su lista de trabajo diaria, órdenes sin estudio
+    y dosis de radiación acumulada por paciente.
+
+Los 10 casos de uso implementados:
+
+  UC1:  Consultar producción mensual por modalidad
+        Actor: Jefe de Servicio
+        Endpoint: GET /api/estudiosrealizados/produccion-mensual
+        Descripción: Agrupa los estudios realizados por tipo de modalidad
+        (RX, TAC, RM, ECO) filtrando por año y mes, mostrando la cantidad
+        total de estudios por cada modalidad.
+
+  UC2:  Consultar estudios pendientes de informe
+        Actor: Médico Radiólogo
+        Endpoint: GET /api/estudiosrealizados/pendientes-informe
+        Descripción: Lista todos los estudios realizados cuyo informe aún no
+        ha sido elaborado, permitiendo al radiólogo priorizar su trabajo.
+
+  UC3:  Consultar estudios realizados hoy por técnico
+        Actor: Técnico Radiólogo
+        Endpoint: GET /api/estudiosrealizados/hoy-por-tecnico/{codigoTecnico}
+        Descripción: Muestra los estudios ejecutados por un técnico específico
+        en la fecha actual, útil para control de producción diaria.
+
+  UC4:  Consultar tiempo promedio por tipo de estudio
+        Actor: Jefe de Servicio
+        Endpoint: GET /api/estudiosrealizados/tiempo-promedio
+        Descripción: Calcula el tiempo promedio (en segundos) que toma cada
+        tipo de estudio, desde el inicio hasta la finalización. Permite
+        identificar cuellos de botella y optimizar la planificación.
+
+  UC5:  Consultar cantidad de estudios por urgencia
+        Actor: Médico Radiólogo
+        Endpoint: GET /api/estudiosrealizados/por-urgencia
+        Descripción: Agrupa los estudios según su nivel de urgencia
+        (Normal, Urgente, Emergencia), facilitando la gestión de prioridades.
+
+  UC6:  Consultar estudios con contraste pendiente de registro
+        Actor: Médico Radiólogo
+        Endpoint: GET /api/estudiosrealizados/contraste-pendiente
+        Descripción: Identifica estudios que requieren medio de contraste pero
+        no tienen registro de aplicación, crucial para la seguridad del paciente.
+
+  UC7:  Consultar órdenes sin estudio realizado
+        Actor: Técnico Radiólogo
+        Endpoint: GET /api/ordenesimagen/sin-estudio
+        Descripción: Lista órdenes médicas que aún no tienen ningún estudio
+        asociado, usando NOT EXISTS. Permite detectar órdenes olvidadas.
+
+  UC8:  Consultar equipos con mayor cantidad de estudios en rango
+        Actor: Jefe de Servicio
+        Endpoint: GET /api/estudiosrealizados/equipos-top
+        Descripción: Ranking de equipos ordenados por cantidad de estudios
+        realizados en un rango de fechas, útil para planificación de
+        mantenimiento y adquisición de nuevos equipos.
+
+  UC9:  Consultar dosis acumulada por paciente
+        Actor: Técnico Radiólogo
+        Endpoint: GET /api/estudiosrealizados/dosis-acumulada
+        Descripción: Suma la dosis de radiación total recibida por cada
+        paciente a lo largo de todos sus estudios, fundamental para control
+        de exposición radiológica.
+
+  UC10: Consultar ranking de tipos de estudio más solicitados
+        Actor: Jefe de Servicio
+        Endpoint: GET /api/estudiosrealizados/ranking-tipos
+        Descripción: Ordena los tipos de estudio por cantidad de realizaciones
+        de mayor a menor, apoyando decisiones de inversión y capacitación.
+
+El diagrama se encuentra en el archivo: Proyecto/DiagramaCasosDeUso.puml
+(Generar imagen PNG desde PlantUML Editor online)
+
+================================================================================
+2. CONSULTAS GENÉRICAS OBLIGATORIAS (20 pts)
+================================================================================
+
+Las 5 consultas genéricas fueron implementadas usando LINQ query syntax
+con proyección (select new {}) y adaptadas a las entidades del módulo.
+
+2.1 Listado general con JOIN entre al menos 2 tablas
+  Endpoint: GET /api/estudiosrealizados/resumen
+  LINQ: from e in EstudiosRealizados join t in TiposEstudio ...
+  Resultado: CodigoEstudio, FechaInicio, NombreTipoEstudio
+
+2.2 Agrupación con conteo (GROUP BY + COUNT)
+  Endpoint: GET /api/estudiosrealizados/contar-por-modalidad
+  LINQ: from e in EstudiosRealizados join t in TiposEstudio ... group e by t.Modalidad
+  Resultado: Modalidad, Cantidad
+
+2.3 Agrupación con suma (GROUP BY + SUM)
+  Endpoint: GET /api/estudiosrealizados/suma-precios-por-modalidad
+  LINQ: from e in EstudiosRealizados join t in TiposEstudio ... group t by t.Modalidad
+  Resultado: Modalidad, IngresoTotalEstimado
+
+2.4 Búsqueda filtrada por código o identificador
+  Endpoint: GET /api/estudiosrealizados/buscar/{codigoOrden}
+  LINQ: from e in EstudiosRealizados join o in OrdenesImagen where o.Codigo == codigoOrden
+  Resultado: CodigoEstudio, FechaInicio, CodigoOrden
+
+2.5 Consulta NOT EXISTS (registros sin relación)
+  Endpoint: GET /api/ordenesimagen/sin-estudio
+  LINQ: from o in OrdenesImagen where !(from e in EstudiosRealizados select e.OrdenImagenId).Contains(o.Id)
+  Resultado: CodigoOrden, FechaSolicitud, Urgencia
+
+================================================================================
+3. DESARROLLO DE CONTROLADORES (30 pts)
+================================================================================
+
+Se crearon 5 controladores en total, cumpliendo con el requisito de mínimo
+3 controladores principales más controladores para entidades derivadas de
+la normalización.
+
+3.1 TiposEstudioController (api/tiposestudio)
+  - GET: Lista todos los tipos de estudio con proyección LINQ
+  - GET/{codigo}: Busca tipo de estudio por código
+  - POST: Crea nuevo tipo de estudio
+  - Entidad base del sistema
+
+3.2 OrdenesImagenController (api/ordenesimagen)
+  - GET: Lista todas las órdenes de imagen con proyección LINQ
+  - GET/{codigo}: Busca orden por código
+  - POST: Crea nueva orden
+  - GET/sin-estudio: Consulta NOT EXISTS (genérica y MIS)
+  - Entidad base del sistema
+
+3.3 EstudiosRealizadosController (api/estudiosrealizados)
+  - GET: Lista todos los estudios con JOIN a 4 tablas
+  - GET/{codigo}: Busca estudio por código
+  - POST: Crea nuevo estudio
+  - 14 endpoints de consulta MIS adicionales
+  - Entidad base del sistema
+
+3.4 EquiposController (api/equipos)
+  - GET: Lista todos los equipos con proyección LINQ
+  - GET/{codigo}: Busca equipo por código
+  - POST: Crea nuevo equipo
+  - Entidad derivada de normalización (relación con EstudiosRealizados)
+
+3.5 TecnicosEjecutoresController (api/tecnicos)
+  - GET: Lista todos los técnicos con proyección LINQ
+  - GET/{codigo}: Busca técnico por código
+  - POST: Crea nuevo técnico
+  - Entidad derivada de normalización (relación con EstudiosRealizados)
+
+Todos los controladores:
+  - Usan LINQ query syntax (from...join...where...group...select)
+  - Tienen al menos GET y POST funcionales
+  - Aplican proyección con select new {}
+  - Respetan el soft delete (query filters en DbContext)
+
+================================================================================
+4. DESARROLLO DE CONSULTAS MIS (30 pts)
+================================================================================
+
+Se implementaron 15 consultas en total (5 genéricas + 10 del diagrama),
+cada una como un endpoint independiente.
+
+Resumen de endpoints de consulta:
+
+  GET /api/estudiosrealizados/resumen                        (Genérica - JOIN)
+  GET /api/estudiosrealizados/contar-por-modalidad           (Genérica - COUNT)
+  GET /api/estudiosrealizados/suma-precios-por-modalidad     (Genérica - SUM)
+  GET /api/estudiosrealizados/buscar/{codigoOrden}           (Genérica - Filtro)
+  GET /api/ordenesimagen/sin-estudio                         (Genérica - NOT EXISTS)
+
+  GET /api/estudiosrealizados/produccion-mensual             (UC1 - GROUP BY)
+  GET /api/estudiosrealizados/pendientes-informe             (UC2 - WHERE)
+  GET /api/estudiosrealizados/hoy-por-tecnico/{codigo}       (UC3 - JOIN + WHERE)
+  GET /api/estudiosrealizados/tiempo-promedio                (UC4 - GROUP BY)
+  GET /api/estudiosrealizados/por-urgencia                   (UC5 - JOIN + GROUP BY + COUNT)
+  GET /api/estudiosrealizados/contraste-pendiente            (UC6 - JOIN + WHERE)
+  GET /api/estudiosrealizados/equipos-top                    (UC7 - JOIN + GROUP BY + ORDER BY)
+  GET /api/estudiosrealizados/dosis-acumulada                (UC8 - GROUP BY + SUM)
+  GET /api/estudiosrealizados/ranking-tipos                  (UC9 - GROUP BY + ORDER BY)
+
+Requisitos cumplidos en cada consulta:
+  [x] Cada consulta es un endpoint independiente
+  [x] Incluyen JOIN cuando se requiere relacionar tablas
+  [x] Incluyen GROUP BY cuando corresponde agrupar datos
+  [x] Usan proyección (select new {}) para evitar exponer Id y Estado
+  [x] Generan información útil para toma de decisiones (enfoque MIS)
+
+================================================================================
+5. MODELO DE DATOS Y NORMALIZACIÓN
+================================================================================
+
+Entidades implementadas (normalización hasta 5FN):
+
+  TipoEstudio (tabla base)
+    - Id, Codigo, Nombre, Modalidad, PrecioBase, RequiereContraste, Estado
+
+  OrdenImagen (tabla base)
+    - Id, Codigo, PacienteId, MedicoSolicitanteId, FechaSolicitud, Urgencia, Estado
+
+  EstudioRealizado (tabla intermedia - relaciona Orden con TipoEstudio)
+    - Id, Codigo, OrdenImagenId, TipoEstudioId, TecnicoEjecutorId, EquipoId,
+      FechaHoraInicio, FechaHoraFin, DosisRadiacion, ContrasteAplicado,
+      EstadoInforme, Estado
+
+  Equipo (entidad normalizada - antes atributo multivaluado)
+    - Id, Codigo, Nombre, Modalidad, Estado
+
+  TecnicoEjecutor (entidad normalizada - antes atributo multivaluado)
+    - Id, Codigo, Nombre, Especialidad, Estado
+
+Relaciones:
+  OrdenImagen 1 --- N EstudioRealizado
+  TipoEstudio 1 --- N EstudioRealizado
+  Equipo      1 --- N EstudioRealizado
+  TecnicoEjecutor 1 --- N EstudioRealizado
+
+Todas las entidades aplican Soft Delete (Estado = "Activo"/"Inactivo")
+con query filters en el DbContext.
+
+================================================================================
+6. TECNOLOGÍAS UTILIZADAS
+================================================================================
+
+  - Framework: .NET 8 Web API
+  - ORM: Entity Framework Core 8.0
+  - Base de datos: PostgreSQL (Npgsql.EntityFrameworkCore.PostgreSQL 8.0.0)
+  - Documentación API: Swagger/OpenAPI (Swashbuckle)
+  - Lenguaje de consultas: LINQ Query Syntax
+  - Lenguaje: C# con Nullable y ImplicitUsings habilitados
+
+================================================================================
+7. INSTRUCCIONES PARA EJECUTAR
+================================================================================
+
+1. Verificar que PostgreSQL esté ejecutándose
+2. Abrir el proyecto en Visual Studio o VS Code
+3. Ejecutar: dotnet restore
+4. Ejecutar: dotnet build
+5. Ejecutar: dotnet run
+6. Acceder a Swagger en: https://localhost:{puerto}/ImagenDiagnostico
+7. La cadena de conexión está en appsettings.json
+
+================================================================================
+8. ARCHIVOS ENTREGADOS
+================================================================================
+
+  - Backend completo (carpeta ImagenDiagnostico)
+  - Diagrama de Casos de Uso: Proyecto/DiagramaCasosDeUso.puml
+  - Migraciones de base de datos: carpeta Migrations/
+  - Este informe
+
+================================================================================
+FIN DEL INFORME
+================================================================================
