@@ -3,11 +3,22 @@ using ImagenDiagnostico.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Database
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Database - Railway sets ConnectionStrings__DefaultConnection
+var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? Environment.GetEnvironmentVariable("DATABASE_URL");
 
-// CORS - Allow frontend and external services
+if (!string.IsNullOrEmpty(connStr) && connStr.StartsWith("postgres://"))
+{
+    // Railway usa postgres:// - convertir a Npgsql format
+    var uri = new Uri(connStr);
+    var userInfo = uri.UserInfo.Split(':');
+    connStr = $"Host={uri.Host};Port={uri.Port};Database={uri.LocalPath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+}
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(connStr));
+
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -29,36 +40,16 @@ builder.Services.AddSwaggerGen(c =>
         Description = @"Microservicio del Servicio de Diagnóstico por Imágenes del Hospital.
 
 ## Endpoints por categoría
-
-- **Órdenes de Imagen** → Consultas Externas (Wilson), Hospitalización (Juan), Emergencias (Alfredo)
-- **Tipos de Estudio** → Catálogo de estudios disponibles (Rayos X, TAC, RMN, Ecografía)
+- **Órdenes de Imagen** → Consultas Externas, Hospitalización, Emergencias
+- **Tipos de Estudio** → Catálogo de estudios disponibles
 - **Estudios Realizados** → Tu equipo de técnicos y radiólogos
 - **Equipos / Técnicos** → Gestión de recursos
-- **Informes Radiológicos** → Radiólogos (Joel), Atención al Paciente (Enny)
+- **Informes Radiológicos** → Radiólogos, Atención al Paciente
 - **Integraciones** → Endpoints para TODOS los compañeros
 
-## Áreas que consumen esta API
-
-| Área | Responsable | Endpoints clave |
-|------|-------------|-----------------|
-| Consultas Externas | Wilson Yucra | POST /ordenesimagen, GET /informes/resultado/{orden} |
-| Hospitalización | Juan Cruz | POST /ordenesimagen/orden-examen |
-| Emergencias | Alfredo Herbas | PATCH /integraciones/emergencias/priorizar/{orden} |
-| Farmacia | Sergio Villarrubia | GET /integraciones/farmacia/contrastes-pendientes |
-| Facturación | Carlos Balcazar | GET /integraciones/facturacion/estudios-finalizados |
-| Atención Paciente | Enny Lopez | GET /integraciones/atencion/informes-listos |
-| Telemedicina | Ricardo Valencia | GET /integraciones/telemedicina/estudios-compartibles |
-| RRHH | Rodrigo Porcel | GET /integraciones/rrhh/tecnicos-activos |
-| Inventarios | Juan Reyes | GET /integraciones/inventarios/resumen-insumos |
-
-**Responsable:** Joel David Cerrogrande Ortega - Mayo 2026",
-        Contact = new Microsoft.OpenApi.Models.OpenApiContact
-        {
-            Name = "Joel David Cerrogrande Ortega"
-        }
+**Responsable:** Joel David Cerrogrande Ortega - Mayo 2026"
     });
 
-    // Add XML comments if available
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
@@ -69,24 +60,46 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// CORS before other middleware
+// CORS
 app.UseCors("AllowAll");
 
-// Swagger
-app.UseSwagger();
-app.UseSwaggerUI(options =>
+// Swagger (solo en desarrollo o si no hay frontend)
+var isProduction = app.Environment.IsProduction();
+var hasFrontend = Directory.Exists(Path.Combine(app.Environment.ContentRootPath, "wwwroot"));
+
+if (!isProduction || !hasFrontend)
 {
-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "API Diagnóstico por Imágenes V1");
-    options.RoutePrefix = "swagger";
-});
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "API V1");
+        options.RoutePrefix = "swagger";
+    });
+}
 
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
 }
 
+// Servir archivos estáticos del frontend (React build)
+if (hasFrontend)
+{
+    app.UseDefaultFiles(new Microsoft.AspNetCore.StaticFiles.DefaultFilesOptions
+    {
+        DefaultFileNames = new[] { "index.html" }
+    });
+    app.UseStaticFiles();
+}
+
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
+// Para SPA: cualquier ruta no-API redirige al index.html
+if (hasFrontend)
+{
+    app.MapFallbackToFile("index.html");
+}
 
 app.Run();
