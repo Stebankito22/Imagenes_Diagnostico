@@ -9,8 +9,13 @@ var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
 
 if (!string.IsNullOrEmpty(connStr) && connStr.StartsWith("postgres://"))
 {
-    // Npgsql acepta postgresql:// como connection string directamente
-    connStr = connStr.Replace("postgres://", "postgresql://") + ";SSL Mode=Require;";
+    var uri = new Uri(connStr.Replace("postgres://", "http://"));
+    var dbParts = uri.LocalPath.TrimStart('/').Split(new[] { '?' }, 2);
+    var dbName = dbParts[0];
+    var dbPort = uri.IsDefaultPort ? 5432 : uri.Port;
+    
+    var password = Uri.UnescapeDataString(uri.UserInfo.Split(new[] { ':' }, 2)[1]);
+    connStr = $"Host={uri.Host};Port={dbPort};Database={dbName};Username={Uri.UnescapeDataString(uri.UserInfo.Split(new[] { ':' }, 2)[0])};Password={password};SSL Mode=Require;";
 }
 
 builder.Services.AddDbContext<AppDbContext>(options =>
