@@ -99,7 +99,7 @@ function Catalogo() {
                   <div className="form-group"><label>Nombre</label><input className="form-control" value={forms.tipo.nombre} onChange={e => setForms({...forms, tipo: {...forms.tipo, nombre: e.target.value}})} required /></div>
                 </div>
                 <div className="form-row">
-                  <div className="form-group"><label>Modalidad</label><input className="form-control" value={forms.tipo.modalidad} onChange={e => setForms({...forms, tipo: {...forms.tipo, modalidad: e.target.value})} placeholder="Rayos X, TAC, RMN..." /></div>
+                  <div className="form-group"><label>Modalidad</label><input className="form-control" value={forms.tipo.modalidad} onChange={e => setForms({...forms, tipo: {...forms.tipo, modalidad: e.target.value}})} placeholder="Rayos X, TAC, RMN..." /></div>
                   <div className="form-group"><label>Precio Base</label><input className="form-control" type="number" step="0.01" value={forms.tipo.precioBase} onChange={e => setForms({...forms, tipo: {...forms.tipo, precioBase: parseFloat(e.target.value)}})} /></div>
                 </div>
               </div>
